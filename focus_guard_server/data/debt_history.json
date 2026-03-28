@@ -1,0 +1,47 @@
+[
+  {
+    "timestamp": 1774729219013,
+    "current_debt": 19.0,
+    "delta": -1.0
+  },
+  {
+    "timestamp": 1774729376127,
+    "current_debt": 16.55,
+    "delta": -2.45
+  },
+  {
+    "timestamp": 1774729976135,
+    "current_debt": 14.47,
+    "delta": -2.08
+  },
+  {
+    "timestamp": 1774730576135,
+    "current_debt": 12.7,
+    "delta": -1.77
+  },
+  {
+    "timestamp": 1774731176131,
+    "current_debt": 11.2,
+    "delta": -1.5
+  },
+  {
+    "timestamp": 1774731776130,
+    "current_debt": 9.92,
+    "delta": -1.28
+  },
+  {
+    "timestamp": 1774732376144,
+    "current_debt": 8.83,
+    "delta": -1.09
+  },
+  {
+    "timestamp": 1774732976141,
+    "current_debt": 7.91,
+    "delta": -0.92
+  },
+  {
+    "timestamp": 1774733576142,
+    "current_debt": 7.12,
+    "delta": -0.79
+  }
+]
