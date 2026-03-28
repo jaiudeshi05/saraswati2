@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+aiofiles
+httpx
+google-generativeai
+python-dotenv
+opencv-python
+Pillow
+aiosqlite
+numpy
