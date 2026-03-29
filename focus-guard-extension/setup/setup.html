@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FocusGuard Setup</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: whitesmoke; }
+        .container { background: white; padding: 40px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to FocusGuard</h1>
+        <p>To provide advanced cognitive state and emotion tracking, FocusGuard needs access to your webcam.</p>
+        <button class="btn" id="request-btn">Grant Camera Permission</button>
+        <p id="status" style="margin-top: 20px; font-weight: bold;"></p>
+    </div>
+    <script src="setup.js"></script>
+</body>
+</html>

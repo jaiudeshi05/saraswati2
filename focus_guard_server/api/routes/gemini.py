@@ -4,6 +4,7 @@ import google.generativeai as genai
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
+from ...storage.session_store import session_store
 from ...utils.helpers import build_gemini_prompt
 from ...utils.constants import GEMINI_MODEL, GEMINI_MAX_TOKENS, GEMINI_TEMPERATURE
 from dotenv import load_dotenv
@@ -99,4 +100,18 @@ async def get_insights(request: GeminiRequest):
     if tab_id:
         gemini_cooldown[tab_id] = now
         
-    return await call_gemini(trigger, context)
+    result = await call_gemini(trigger, context)
+    
+    # Record in history for dashboard
+    session_store.add_nudge({
+        "timestamp": int(time.time() * 1000),
+        "trigger": trigger,
+        **result
+    })
+    
+    return result
+
+@router.get('/gemini/history')
+async def get_gemini_history(limit: int = 5):
+    """Returns the last N Gemini insights for the dashboard feed."""
+    return session_store.get_nudges(limit)

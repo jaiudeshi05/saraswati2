@@ -19,7 +19,10 @@ class SessionEnd(BaseModel):
 
 @router.post('/session/start')
 async def start_session(request: SessionStart):
-    """Opens a new tracking session with user goal."""
+    session_store.current_goal = request.goal
+    session_store.current_session_id = request.session_id
+    session_store.start_ts = request.timestamp
+
     await save_session({
         'id': request.session_id,
         'goal': request.goal,
@@ -64,3 +67,34 @@ async def end_session(request: SessionEnd):
 @router.get('/session/history')
 async def list_sessions(limit: int = 30):
     return await get_sessions(limit)
+
+@router.get('/session/current')
+async def get_current_session():
+    """Returns the currently active session metadata."""
+    return {
+        "session_id": session_store.current_session_id,
+        "goal": session_store.current_goal,
+        "start_ts": session_store.start_ts,
+        "active": session_store.current_session_id is not None
+    }
+
+@router.get('/stats/summary')
+async def get_stats_summary():
+    """Aggregates across all active tabs and returns live summary statistics."""
+    try:
+        return session_store.get_session_summary()
+    except Exception as e:
+        return {
+            'total_snapshots': 0, 'active_tabs': 0,
+            'avg_wpm': 0.0, 'avg_backspace_ratio': 0.0,
+            'total_undo_loops': 0, 'total_task_switches': 0,
+            'fixation_episodes': 0, 'error': str(e)
+        }
+
+@router.get('/stats/heatmap')
+async def get_stats_heatmap():
+    """Returns time-series heatmap data for the dashboard."""
+    try:
+        return {"heatmap": session_store.get_heatmap_data()}
+    except Exception as e:
+        return {"heatmap": [], "error": str(e)}

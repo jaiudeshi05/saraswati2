@@ -2,7 +2,7 @@ import os
 import uvicorn
 from fastapi import FastAPI
 from .api.middleware.cors import setup_cors
-from .api.routes import health, predict, debt, cv, session, gemini
+from .api.routes import health, predict, debt, session, gemini, cv
 from .storage.db import init_db
 from pathlib import Path
 
@@ -55,4 +55,4 @@ def shutdown_event():
     print("🔌 FocusGuard server shutting down...")
 
 if __name__ == '__main__':
-    uvicorn.run("focus-guard-server.server:app", host='0.0.0.0', port=5000, reload=True)
+    uvicorn.run("focus_guard_server.server:app", host='0.0.0.0', port=5000, reload=True)

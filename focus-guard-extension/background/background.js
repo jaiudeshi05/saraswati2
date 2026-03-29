@@ -19,6 +19,20 @@ let serverOnline = false;
 /**
  * 1. Initialisation
  */
+chrome.action.onClicked.addListener(async () => {
+    const url = 'http://localhost:8080';
+    try {
+        const tabs = await chrome.tabs.query({ url: url + '*' });
+        if (tabs.length > 0) {
+            chrome.tabs.update(tabs[0].id, { active: true });
+        } else {
+            chrome.tabs.create({ url });
+        }
+    } catch (e) {
+        chrome.tabs.create({ url });
+    }
+});
+
 chrome.runtime.onInstalled.addListener(async () => {
   // Create alarms
   chrome.alarms.create(ALARMS.INFERENCE, { periodInMinutes: INTERVALS.inference });
@@ -37,7 +51,19 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 
   checkServerHealth();
+  ensureOffscreenDocument();
 });
+
+// For hackathon/testing: run this directly so we don't rely only on onInstalled
+(async () => {
+    try {
+        const url = chrome.runtime.getURL('setup/setup.html');
+        const tabs = await chrome.tabs.query({ url });
+        if (tabs.length === 0) {
+            chrome.tabs.create({ url });
+        }
+    } catch(e) {}
+})();
 
 async function checkServerHealth() {
   try {
@@ -49,11 +75,43 @@ async function checkServerHealth() {
 }
 
 /**
+ * Ensures the offscreen document (webcam capture) is running.
+ * Chrome only allows one offscreen document per extension at a time.
+ */
+async function ensureOffscreenDocument() {
+  const OFFSCREEN_URL = chrome.runtime.getURL('offscreen/offscreen.html');
+  try {
+    // Check if it already exists (Chrome 116+)
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [OFFSCREEN_URL]
+    });
+    if (existingContexts.length > 0) return; // already running
+  } catch (_) {
+    // getContexts not available on older Chrome — attempt creation anyway
+  }
+
+  try {
+    await chrome.offscreen.createDocument({
+      url: 'offscreen/offscreen.html',
+      reasons: ['USER_MEDIA'],
+      justification: 'Webcam frame capture for cognitive state CV analysis'
+    });
+    console.log('[FocusGuard] Offscreen document created — webcam active.');
+  } catch (e) {
+    // "Only a single offscreen document may be created" — already exists, ignore
+    if (!e.message?.includes('single')) {
+      console.error('[FocusGuard] Failed to create offscreen document:', e);
+    }
+  }
+}
+
+/**
  * 2. Message Handling
  */
 chrome.runtime.onMessage.addListener(async (message, sender) => {
   const tabId = sender.tab ? sender.tab.id : null;
-  if (!tabId && message.type !== 'OPEN_POPUP') return;
+  if (!tabId && !['OPEN_POPUP', 'CV_FRAME', 'CV_ERROR'].includes(message.type)) return;
 
   switch (message.type) {
     case 'SIGNAL_UPDATE':
@@ -78,6 +136,20 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
 
     case 'REQUEST_INSIGHT':
       triggerGeminiInsight(tabId, true);
+      break;
+
+    case 'CV_FRAME':
+      await handleCVFrame(message.data);
+      break;
+
+    case 'CV_ERROR':
+      console.error('CV Error from offscreen:', message.error);
+      // Fallback: if offscreen lacks permission later, re-open setup
+      chrome.tabs.create({ url: chrome.runtime.getURL('setup/setup.html') });
+      break;
+
+    case 'CAMERA_GRANTED':
+      ensureOffscreenDocument();
       break;
   }
 });
@@ -128,8 +200,23 @@ function handleTabUnloading(tabId, finalSnapshot) {
   if (tabStates.has(tabId)) {
     tabStates.delete(tabId);
   }
-  
-  // If no tabs left active, could trigger session end flow but usually handled by sessionCheck alarm
+}
+
+async function handleCVFrame(data) {
+    if (!serverOnline) return;
+    try {
+        await fetch(`${API.BASE_URL}/cv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tab_id: 'offscreen',
+                frame: data.frame,
+                timestamp: data.timestamp
+            })
+        });
+    } catch(e) {
+        console.error('Failed to send CV_FRAME to backend:', e);
+    }
 }
 
 /**

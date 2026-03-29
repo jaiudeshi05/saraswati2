@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 from ...storage.session_store import session_store
+from pathlib import Path
+import sys
 
 router = APIRouter()
 
@@ -26,13 +28,14 @@ class SignalGroup(BaseModel):
     explorationSignal: bool = False
 
 class PredictRequest(BaseModel):
-    tab_id: str
+    tab_id: Any
     url: str
-    timestamp: int
+    timestamp: float
     scroll: Optional[Dict[str, Any]] = None
     mouse: Optional[Dict[str, Any]] = None
     keyboard: Optional[Dict[str, Any]] = None
     navigation: Optional[Dict[str, Any]] = None
+    flags: Optional[Dict[str, Any]] = None
 
 def fallback_classify(snapshot: dict) -> dict:
     """Python mirror of extension's fallback_classifier logic."""
@@ -84,6 +87,41 @@ async def predict_state(request: PredictRequest):
     elif result['state'] == 'stuck':
         alert = True
         alert_type = 'stuck'
+
+    # Retrieve CV windowed probs if any
+    cv_res = getattr(session_store, "cv_results", {}).get('offscreen', None)
+    cv_windowed = cv_res.get("windowed_probs") if cv_res else None
+
+    # Normalise fallback rf_probs
+    rf_probs = {'Focused': 0.0, 'Confused': 0.0, 'Fatigued': 0.0, 'Distracted': 0.0, 'WrongApproach': 0.0}
+    state_to_rf = {
+        'focused': 'Focused',
+        'confused': 'Confused',
+        'fatigued': 'Fatigued',
+        'stuck': 'WrongApproach',
+        'fixating': 'WrongApproach',
+        'distracted': 'Distracted'
+    }
+    rf_mapped = state_to_rf.get(result['state'], 'Distracted')
+    rf_probs[rf_mapped] = result.get('confidence', 0.5)
+
+    model_dir = str((Path(__file__).parent.parent.parent.parent / "model").resolve())
+    if model_dir not in sys.path:
+        sys.path.append(model_dir)
+    
+    try:
+        from fusion_v2 import fuse_rf_cv
+        fused = fuse_rf_cv(rf_probs, cv_windowed)
+        # Re-assign fused state
+        fused_state = fused['fused_state'].lower()
+        if fused_state == 'wrongapproach':
+            result['state'] = 'stuck'
+        else:
+            result['state'] = fused_state
+            
+        result['confidence'] = fused['fused_confidence']
+    except Exception as e:
+        pass
 
     # Build gemini context hint
     hint = f"User on URL {request.url[:30]}... state is {result['state'].upper()}. Dominant: {result['dominant_signal']}"

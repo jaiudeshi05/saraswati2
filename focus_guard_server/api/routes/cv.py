@@ -1,49 +1,64 @@
-import base64
-import numpy as np
-import cv2
+import os
+import sys
+import logging
+from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Dict, Any
+from pathlib import Path
 
-router = APIRouter()
+logger = logging.getLogger(__name__)
+router = APIRouter(tags=['cv'])
 
-class CVRequest(BaseModel):
+# Import cv_analyzer_v2 directly from model/ directory!
+model_dir = str((Path(__file__).parent.parent.parent.parent / "model").resolve())
+if model_dir not in sys.path:
+    sys.path.append(model_dir)
+
+try:
+    from cv_analyzer_v2 import CVAnalyzer
+    _cv_analyzer_available = True
+except Exception as e:
+    logger.warning(f"cv_analyzer_v2 not available: {e} — /cv endpoint will return mock responses.")
+    CVAnalyzer = None  # type: ignore
+    _cv_analyzer_available = False
+
+MODEL_PATH = os.path.join(model_dir, "emotion_model.pt")
+_analyzer: Optional[object] = None
+
+def get_analyzer():
+    global _analyzer
+    if _analyzer is None:
+        try:
+            _analyzer = CVAnalyzer(model_path=MODEL_PATH)
+            logger.info(f"Loaded CVAnalyzer from {MODEL_PATH}")
+        except Exception as e:
+            logger.error(f"CVAnalyzer loading failed: {e}")
+    return _analyzer
+
+class FrameRequest(BaseModel):
     tab_id: str
-    frame: str # base64 JPEG
+    frame: str
     timestamp: int
 
-def mock_cv_result() -> dict:
-    """Mock CV values when driver is missing."""
-    return {
-        'eye_openness': 0.61,
-        'blink_rate': 18,
-        'head_pose': { 'yaw': 12, 'pitch': -5 },
-        'fatigue_level': 0.44,
-        'mood': 'neutral',
-        'mood_confidence': 0.71,
-        'mock': True
-    }
+@router.post("/cv")
+async def analyze_cv(req: FrameRequest):
+    analyzer = get_analyzer()
+    if analyzer is None:
+        return {"mock": True, "error": "Model not loaded"}
 
-@router.post('/cv')
-async def analyze_camera_frame(request: CVRequest):
-    """Webcam frame analysis — mood, fatigue, eye tracking."""
+    b64 = req.frame
+    if b64.startswith("data:"):
+        b64 = b64.split(",", 1)[1]
+
+    # Pass the base64 JPEG
+    res = analyzer.analyze_frame(b64)
     
-    # Base64 to image
-    try:
-        header, encoded = request.frame.split(',', 1) if ',' in request.frame else ('', request.frame)
-        data = base64.b64decode(encoded)
-        nparr = np.frombuffer(data, np.uint8)
-        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    except Exception as e:
-        return {'status': 'error', 'message': 'Invalid base64 frame payload'}
+    # Store the cv_windowed_probs in session_store
+    from ...storage.session_store import session_store
+    if not hasattr(session_store, "cv_results"):
+        session_store.cv_results = {}
         
-    # ⚠️ DROP-IN MODULE — provided separately by ML team
-    # Expected: analyze_frame(frame: np.ndarray) -> dict
-    # Returns: { eye_openness, blink_rate, head_pose, fatigue_level, mood, mood_confidence }
-    try:
-        from ...inference.cv_engine import analyze_frame
-        result = analyze_frame(frame)
-    except ImportError:
-        result = mock_cv_result()
-        
-    return result
+    # 'offscreen' is the designated tab id for webcam frame submission
+    session_store.cv_results['offscreen'] = res
+    
+    return res
