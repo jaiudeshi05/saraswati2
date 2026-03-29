@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import DashboardCard from "@/components/DashboardCard";
-import { Camera, Eye, Shield, RefreshCw } from "lucide-react";
+import { Camera, Eye, Shield, RefreshCw, Bell, User } from "lucide-react";
 import { useState } from "react";
 
 const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => (
@@ -25,11 +25,11 @@ const SettingsPage = () => {
   const [analytics, setAnalytics] = useState(true);
 
   return (
-    <div className="w-screen h-full flex-shrink-0 flex items-center justify-center px-6 pt-14 pb-16">
-      <div className="w-full max-w-2xl h-full py-4 flex flex-col gap-4">
+    <div className="w-screen h-full flex-shrink-0 flex items-center justify-center px-6 pt-14 pb-16 overflow-y-auto">
+      <div className="w-full max-w-5xl h-full py-4 flex flex-col gap-4 min-h-min pb-[100px]">
         <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">Settings</p>
 
-        <div className="grid grid-cols-2 gap-4 flex-1">
+        <div className="grid grid-cols-3 gap-5 flex-1 w-full mt-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <DashboardCard glass className="h-full flex flex-col gap-5">
               <div className="flex items-center gap-2 mb-1">
@@ -99,20 +99,69 @@ const SettingsPage = () => {
             <DashboardCard glass className="h-full flex flex-col gap-5">
               <div className="flex items-center gap-2 mb-1">
                 <Eye size={16} className="text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">Model</p>
+                <p className="text-sm font-medium text-foreground">Model Insights</p>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3 mt-1">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
                   <span className="text-xs text-muted-foreground">CV Model</span>
                   <span className="text-xs text-foreground font-medium">v2.1.4</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
                   <span className="text-xs text-muted-foreground">UX Model</span>
                   <span className="text-xs text-foreground font-medium">v1.8.0</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs text-muted-foreground">GPU Acceleration</span>
+                  <span className="text-[10px] text-emerald-500 font-medium">Active</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Latency</span>
                   <span className="text-xs accent-text font-medium">12ms</span>
+                </div>
+              </div>
+            </DashboardCard>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <DashboardCard glass className="h-full flex flex-col gap-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Bell size={16} className="text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Notifications</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-foreground">Usage Alerts</p>
+                  <p className="text-[10px] text-muted-foreground">When focus drops low</p>
+                </div>
+                <Toggle enabled={true} onToggle={() => {}} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-foreground">Daily Summaries</p>
+                  <p className="text-[10px] text-muted-foreground">End of day insights</p>
+                </div>
+                <Toggle enabled={false} onToggle={() => {}} />
+              </div>
+            </DashboardCard>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+            <DashboardCard glass className="h-full flex flex-col gap-5">
+              <div className="flex items-center gap-2 mb-1">
+                <User size={16} className="text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Account</p>
+              </div>
+              <div className="space-y-3 mt-1">
+                <div className="flex flex-col gap-1 border-b border-border/40 pb-2">
+                  <span className="text-xs text-foreground">Plan</span>
+                  <span className="text-xs accent-text font-medium">Pro Developer</span>
+                </div>
+                <div className="flex flex-col gap-1 border-b border-border/40 pb-2">
+                  <span className="text-xs text-foreground">License Key</span>
+                  <span className="text-[10px] text-muted-foreground font-mono">XXXX-XXXX-XXXX-9821</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors mt-2">Manage Subscription &rarr;</span>
                 </div>
               </div>
             </DashboardCard>

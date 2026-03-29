@@ -4,6 +4,7 @@ import { X, Mail, MapPin, Calendar, Activity, Target, Clock } from "lucide-react
 
 interface ProfilePageProps {
   onClose: () => void;
+  avatarType: string;
 }
 
 const ProfilePage = ({ onClose }: ProfilePageProps) => {

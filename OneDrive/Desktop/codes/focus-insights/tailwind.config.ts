@@ -13,6 +13,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Outfit"', 'Helvetica', 'Arial', 'system-ui', '-apple-system', 'sans-serif'],
+        melo: ['"MeloDrama"', 'sans-serif'],
+        anon: ['"Anonima"', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -22,11 +22,11 @@ const MicroGraph = ({ data }: { data: { val: number }[] }) => {
     <div className="w-full h-8 opacity-80 pointer-events-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <Line 
-            type="monotone" 
-            dataKey="val" 
-            stroke="var(--accent-orange)" 
-            strokeWidth={2} 
+          <Line
+            type="monotone"
+            dataKey="val"
+            stroke="var(--accent-orange)"
+            strokeWidth={2}
             dot={false}
             isAnimationActive={true}
           />

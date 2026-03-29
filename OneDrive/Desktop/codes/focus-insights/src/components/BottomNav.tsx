@@ -24,8 +24,8 @@ const BottomNav = ({ activeIndex, onNavigate }: BottomNavProps) => {
             onClick={() => onNavigate(item.index)}
             className={`nav-box relative flex flex-col items-center justify-center transition-all duration-500 rounded-t-2xl border-t border-x border-border/50 backdrop-blur-md ${
               isActive
-                ? "h-[72px] -translate-y-4 bg-[hsl(var(--muted)/0.95)] z-50 gap-1.5 border-t-orange-500 border-t-2 shadow-[0_-8px_20px_rgba(249,115,22,0.2)]"
-                : "h-[56px] translate-y-0 bg-[hsl(var(--muted)/0.4)] z-10 gap-1"
+                ? "h-[80px] pb-2 bg-[hsl(var(--muted)/0.95)] z-50 gap-1.5 border-t-orange-500 border-t-2 shadow-[0_-8px_20px_rgba(249,115,22,0.2)]"
+                : "h-[64px] pb-2 bg-[hsl(var(--muted)/0.4)] z-10 gap-1"
               }`}
             style={{ width: "20vw" }}
           >

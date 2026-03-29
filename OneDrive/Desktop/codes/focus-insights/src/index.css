@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
+@font-face {
+  font-family: 'MeloDrama';
+  src: url('/MeloDrama.ttf') format('truetype');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,50 +102,56 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
+
+  h1, h2, h3, .melo-title {
+    font-family: 'MeloDrama', serif;
+  }
 }
 
 @layer utilities {
+
   /* ── Background: blue gradient + blue dot grid, no grain ── */
   .bg-surface-gradient {
-    /* Dark navy → mid-blue gradient with subtle blue dots on top */
-    background:
-      radial-gradient(circle, rgba(99, 179, 237, 0.18) 1px, transparent 1px),
-      linear-gradient(160deg, #050d1f 0%, #0d1f45 45%, #1a3a72 100%);
-    background-size: 24px 24px, 100% 100%;
+    /* Dark navy → mid-blue gradient */
+    background: linear-gradient(160deg, #050d1f 0%, #0d1f45 45%, #1a3a72 100%);
   }
 
   /* Light mode override */
   :root:not(.dark) .bg-surface-gradient {
-    background:
-      radial-gradient(circle, rgba(59, 130, 246, 0.14) 1px, transparent 1px),
-      linear-gradient(160deg, #dbeafe 0%, #bfdbfe 45%, #93c5fd 100%);
-    background-size: 24px 24px, 100% 100%;
+    background: linear-gradient(160deg, #dbeafe 0%, #bfdbfe 45%, #93c5fd 100%);
   }
 
   .bg-card-warm {
     background: linear-gradient(135deg, var(--card-warm-1), var(--card-warm-2));
   }
+
   .text-secondary-custom {
     color: var(--text-secondary);
   }
+
   .accent-text {
     color: var(--accent-orange);
   }
+
   .card-shadow {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   }
+
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
+
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     border-color: var(--accent-orange);
   }
+
   .glass-effect {
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -148,6 +159,7 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
   }
+
   .glass-card {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -156,11 +168,75 @@
     box-shadow: var(--glass-shadow);
     border-radius: var(--radius);
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+
+    50% {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes pulse-ring-outer {
+    0% {
+      transform: scale(1.15);
+      opacity: 0.2;
+    }
+
+    50% {
+      transform: scale(1.25);
+      opacity: 0.35;
+    }
+
+    100% {
+      transform: scale(1.15);
+      opacity: 0.2;
+    }
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2.5s infinite ease-in-out;
+  }
+
+  .animate-pulse-outer {
+    animation: pulse-ring-outer 2.5s infinite ease-in-out 0.8s;
+  }
+
+  @keyframes shine-sweep {
+    0% {
+      transform: translateX(-100%) skewX(-15deg);
+    }
+
+    100% {
+      transform: translateX(200%) skewX(-15deg);
+    }
+  }
+
+  .animate-shine-sweep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shine-sweep 3s infinite linear;
   }
 }

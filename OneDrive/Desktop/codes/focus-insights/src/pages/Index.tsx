@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "@/components/pages/HomePage";
+import DotGrid from "@/components/Backgrounds/DotGrid";
 import InsightsPage from "@/components/pages/InsightsPage";
 import StatsPage from "@/components/pages/StatsPage";
 import SettingsPage from "@/components/pages/SettingsPage";
@@ -56,18 +57,24 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-surface-gradient dot-grid relative overflow-hidden">
-      {/* Dynamic Background Geometric Shapes */}
+    <div className="h-screen w-screen bg-surface-gradient relative overflow-hidden">
+      {/* Interactive Dot Grid Background */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-blue-500/60 blur-[120px] mix-blend-screen animate-pulse duration-10000" />
-        <div className="absolute top-[20%] -right-[10%] w-[40vw] h-[40vw] rounded-full bg-cyan-400/25 blur-[100px] mix-blend-screen" style={{ animation: 'pulse 15s infinite' }} />
-        <div className="absolute -bottom-[20%] left-[20%] w-[60vw] h-[60vw] rounded-full bg-indigo-50/10 blur-[130px] mix-blend-screen opacity-50" />
+        <div className="w-full h-full pointer-events-auto">
+          <DotGrid
+            baseColor={isDark ? "#334155" : "#94a3b8"}
+            activeColor={isDark ? "#3b82f6" : "#2563eb"}
+            gap={32}
+            dotSize={4}
+            proximity={120}
+          />
+        </div>
       </div>
 
-      <TopBar 
-        isDark={isDark} 
-        onToggleTheme={toggleTheme} 
-        onProfileClick={() => setShowProfile(true)} 
+      <TopBar
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onProfileClick={() => setShowProfile(true)}
         avatarType={avatarType}
         setAvatarType={setAvatarType}
       />

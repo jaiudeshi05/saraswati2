@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardCard from "@/components/DashboardCard";
-import { Clock } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Clock, Activity, Target } from "lucide-react";
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const tabs = ["Coding", "Browsing", "Writing", "Meeting"];
 
@@ -56,13 +56,34 @@ const getHeatColor = (value: number) => {
 
 const InsightsPage = () => {
   const [activeTab, setActiveTab] = useState("Coding");
+  const [scrubIndex, setScrubIndex] = useState(10); // default to 14:00
   const barData = tabData[activeTab];
+
+  const times = [
+    "9:00", "9:30", "10:00", "10:30", "11:00", "11:30", 
+    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30"
+  ];
+
+  const getSnapshotData = (idx: number) => {
+    if (idx <= 2) return { activity: "Coding", score: 82, mood: "😄 Engaged", time: times[idx] };
+    if (idx <= 4) return { activity: "Coding", score: 74, mood: "😐 Neutral", time: times[idx] };
+    if (idx <= 7) return { activity: "Browsing", score: 45, mood: "😤 Frustrated", time: times[idx] };
+    if (idx <= 9) return { activity: "Writing", score: 78, mood: "😊 Recovered", time: times[idx] };
+    return { activity: "Coding", score: 88, mood: "🧘 Focused", time: times[idx] };
+  };
+
+  const snapshot = getSnapshotData(scrubIndex);
 
   return (
     <div className="w-full h-full flex-shrink-0 flex items-center justify-center px-6 pt-[88px] pb-[104px] overflow-hidden">
       <div className="w-full max-w-6xl h-full grid grid-cols-[1fr_280px] gap-4 py-2 min-h-0">
         {/* Main Charts */}
-        <div className="flex flex-col gap-4">
+        <motion.div 
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ delay: 0.1 }}
+           className="flex flex-col gap-4"
+        >
           {/* Tab Bar + Bar Chart */}
           <DashboardCard glass className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-4">
@@ -85,6 +106,50 @@ const InsightsPage = () => {
                 <span className="text-[10px] text-muted-foreground">Session: {sessionTimes[activeTab]}</span>
               </div>
             </div>
+
+            {/* Timeline Scrubber */}
+            <div className="w-full flex flex-col gap-1 px-2 mt-2 mb-6 pointer-events-auto">
+              {/* Snapshot Card (floating style) */}
+              <AnimatePresence mode="popLayout">
+                <motion.div 
+                  key={snapshot.time}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center justify-between bg-card border border-border/50 shadow-md p-2.5 rounded-lg mb-2 relative mx-auto w-3/4"
+                >
+                  <div className="text-xs font-bold w-12 text-center text-foreground">{snapshot.time}</div>
+                  <div className="w-px h-6 bg-border/50 mx-2"></div>
+                  <div className="flex flex-1 items-center justify-around gap-2 text-xs">
+                    <div className="flex items-center gap-1.5"><Activity size={12} className="text-blue-500" /><span className="text-muted-foreground">Act:</span> {snapshot.activity}</div>
+                    <div className="flex items-center gap-1.5"><Target size={12} className="text-orange-500" /><span className="text-muted-foreground">Focus:</span> <span className="text-foreground font-semibold">{snapshot.score}</span></div>
+                    <div className="flex items-center gap-1"><span className="text-muted-foreground">Mood:</span> {snapshot.mood}</div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="relative w-full h-8 flex items-center justify-center">
+                <input 
+                  type="range" 
+                  min="0" max="11" step="1" 
+                  value={scrubIndex} 
+                  onChange={(e) => setScrubIndex(parseInt(e.target.value))}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-muted outline-none relative z-10" 
+                  style={{ 
+                     background: `linear-gradient(to right, var(--accent-orange) ${(scrubIndex / 11) * 100}%, hsl(var(--muted)) ${(scrubIndex / 11) * 100}%)`,
+                  }}
+                />
+                {/* Custom thumb style overrides needed in standard CSS but tailwind handles most, we rely on accent-color in index.css or simple styling */}
+              </div>
+              <div className="flex justify-between w-full mt-1 text-[9px] text-muted-foreground">
+                {times.map((t, i) => (
+                  <span key={i} className={`text-center w-6 transition-colors ${i === scrubIndex ? "text-orange-500 font-bold" : ""}`}>
+                    {t.replace(":00", "").replace(":30", ".5")}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <div className="flex-1 flex flex-col min-h-0 relative">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -103,7 +168,17 @@ const InsightsPage = () => {
                         cursor={{ fill: "hsl(var(--muted)/0.4)" }}
                         contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                       />
-                      <Bar dataKey="value" fill="var(--accent-orange)" radius={[4, 4, 0, 0]} animationDuration={1000} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={500}>
+                        {barData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill="var(--accent-orange)" 
+                            fillOpacity={index === scrubIndex ? 1 : 0.4}
+                            stroke={index === scrubIndex ? "#ffedd5" : "none"}
+                            strokeWidth={index === scrubIndex ? 2 : 0}
+                          />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </motion.div>
@@ -132,10 +207,15 @@ const InsightsPage = () => {
               ))}
             </div>
           </DashboardCard>
-        </div>
+        </motion.div>
 
         {/* Sidebar Stats */}
-        <div className="flex flex-col gap-4">
+        <motion.div 
+           initial={{ opacity: 0, x: 20 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ delay: 0.2 }}
+           className="flex flex-col gap-4"
+        >
           <DashboardCard glass className="flex flex-col gap-3">
             <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">Session Summary</p>
             {[
@@ -154,26 +234,29 @@ const InsightsPage = () => {
           <DashboardCard glass className="flex-1 flex flex-col gap-3">
             <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">Mood Timeline</p>
             {[
-              { time: "9:00", mood: "😊 Engaged" },
-              { time: "10:30", mood: "😐 Neutral" },
-              { time: "11:45", mood: "😤 Frustrated" },
-              { time: "13:00", mood: "😊 Recovered" },
-              { time: "14:15", mood: "🧘 Focused" },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                className="flex items-center gap-2"
-              >
-                <span className="text-[10px] text-muted-foreground w-10">{item.time}</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                <span className="text-xs text-foreground">{item.mood}</span>
-              </motion.div>
-            ))}
+              { time: "9:00", mood: "😄 Engaged", idxRange: [0, 2] },
+              { time: "10:30", mood: "😐 Neutral", idxRange: [3, 4] },
+              { time: "11:45", mood: "😤 Frustrated", idxRange: [5, 7] },
+              { time: "13:00", mood: "😊 Recovered", idxRange: [8, 9] },
+              { time: "14:15", mood: "🧘 Focused", idxRange: [10, 11] },
+            ].map((item, i) => {
+              const isActive = scrubIndex >= item.idxRange[0] && scrubIndex <= item.idxRange[1];
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className={`flex items-center gap-2 p-1.5 rounded-lg transition-colors ${isActive ? 'bg-muted/50' : ''}`}
+                >
+                  <span className={`text-[10px] w-10 transition-colors ${isActive ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{item.time}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full transition-all ${isActive ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] scale-125' : 'bg-muted-foreground pointer-events-none'}`} />
+                  <span className={`text-xs transition-colors ${isActive ? 'text-orange-500 font-semibold' : 'text-foreground'}`}>{item.mood}</span>
+                </motion.div>
+              );
+            })}
           </DashboardCard>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

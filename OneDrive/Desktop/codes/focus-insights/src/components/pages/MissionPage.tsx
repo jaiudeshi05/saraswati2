@@ -3,15 +3,27 @@ import { motion } from "framer-motion";
 const blocks = [
   {
     title: "Decode Interaction",
-    text: "We decode human-computer interaction patterns using computer vision and behavioral analytics.",
+    text: "We decode human-computer interaction patterns using computer vision and behavioral analytics to generate deep insights.",
   },
   {
     title: "Measure Productivity",
-    text: "Making productivity measurable through non-invasive tracking and intelligent scoring systems.",
+    text: "Making productivity measurable through non-invasive tracking and intelligent scoring systems dynamically adapting to your workflow.",
   },
   {
     title: "Ethics First",
-    text: "Ethical tracking, user-first insights. Your data never leaves your device without consent.",
+    text: "Ethical tracking, user-first insights. Your data never leaves your device without consent. Local processing guarantees privacy.",
+  },
+  {
+    title: "Flow State",
+    text: "Identify blockers and learn what pulls you out of deep work. Our goal is to extend your uninterrupted concentration.",
+  },
+  {
+    title: "Burnout Prevention",
+    text: "By sensing fatigue from posture and gaze, we remind you to rest before exhaustion sets in, prioritizing long-term health.",
+  },
+  {
+    title: "Open Ecosystem",
+    text: "Extensible models that allow developers to connect local tools, build their own trackers, and personalize their experience.",
   },
 ];
 
@@ -37,17 +49,17 @@ const MissionPage = () => {
           <span className="accent-text font-medium">so you can work better.</span>
         </motion.h2>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-6">
           {blocks.map((block, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -4, scale: 1.02 }}
-              transition={{ delay: 0.3 + i * 0.15 }}
-              className="glass-card p-6 card-hover text-left"
+              transition={{ delay: 0.3 + i * 0.1 }}
+              className="glass-card p-6 card-hover text-left flex flex-col justify-between"
             >
-              <p className="text-sm font-semibold text-foreground mb-2">{block.title}</p>
+              <p className="text-sm font-semibold text-foreground mb-3">{block.title}</p>
               <p className="text-xs text-muted-foreground leading-relaxed">{block.text}</p>
             </motion.div>
           ))}
@@ -57,10 +69,10 @@ const MissionPage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-10 flex items-center justify-center gap-6"
+          className="mt-12 flex flex-wrap items-center justify-center gap-4 border-t border-border/20 pt-8"
         >
-          {["Privacy-first", "Open research", "No cloud required"].map((tag, i) => (
-            <span key={i} className="text-[10px] text-muted-foreground tracking-wide uppercase glass-card px-4 py-1.5">
+          {["Privacy-first", "Open research", "No cloud required", "Local LLaMA Ready", "Biometric Free", "Zero Telemetry"].map((tag, i) => (
+            <span key={i} className="text-[10px] text-muted-foreground tracking-wide uppercase glass-card px-4 py-1.5 hover:text-orange-500 transition-colors cursor-pointer">
               {tag}
             </span>
           ))}
