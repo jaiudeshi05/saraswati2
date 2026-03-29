@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Mic, MicOff, TrendingUp, Eye, AlertTriangle, Zap, CheckCircle } from "lucide-react";
+import { TrendingUp, Eye, AlertTriangle, Zap, CheckCircle, Video, VideoOff, ScanFace, Activity } from "lucide-react";
 import DashboardCard from "@/components/DashboardCard";
 import Avatar3D from "@/components/Avatar3D";
 
@@ -9,9 +9,6 @@ const getInsights = () => [
   { icon: Eye, text: "Average focus time is 12% higher than yesterday", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
   { icon: Zap, text: "Scroll fatigue observed during code review", color: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/20" },
   { icon: AlertTriangle, text: "Frequent tab switching detected (Google/StackOverflow)", color: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20" },
-  { icon: TrendingUp, text: "Posture optimization improved by 8% this week", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20" },
-  { icon: Eye, text: "Blink rate stabilized indicating deep work state", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
-  { icon: CheckCircle, text: "Task completion velocity matching historical bests", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
 ];
 
 interface HomePageProps {
@@ -32,83 +29,44 @@ const badges = [
 ];
 
 const HomePage = ({ avatarType = "fatigued" }: HomePageProps) => {
-  const [isListening, setIsListening] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [transcript, setTranscript] = useState("Listening for voice notes...");
-  const [waveData, setWaveData] = useState<number[]>(new Array(24).fill(3));
-  const recognitionRef = useRef<any>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const stopListening = useCallback(() => {
-    setIsListening(false);
-    recognitionRef.current?.stop();
-    cancelAnimationFrame(animFrameRef.current);
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    setWaveData(new Array(24).fill(3));
-    if (transcript === "") setTranscript("Microphone off. Click to start.");
-  }, [transcript]);
-
-  const startListening = useCallback(async () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setTranscript("Speech recognition not supported in this browser.");
-      return;
-    }
-
+  const startCapture = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const audioCtx = new AudioContext();
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      const updateWave = () => {
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(data);
-        const bars = Array.from(data.slice(0, 24)).map((v) => Math.max(3, (v / 255) * 28));
-        setWaveData(bars);
-        animFrameRef.current = requestAnimationFrame(updateWave);
-      };
-      updateWave();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 640, height: 480 } });
+      setMediaStream(stream);
+      setIsCapturing(true);
     } catch {
-      // Mic access denied
+      // Camera access denied
     }
+  }, []);
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+  const stopCapture = useCallback(() => {
+    mediaStream?.getTracks().forEach((t) => t.stop());
+    setMediaStream(null);
+    setIsCapturing(false);
+  }, [mediaStream]);
 
-    recognition.onresult = (event: any) => {
-      let finalTranscript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        finalTranscript += event.results[i][0].transcript;
-      }
-      setTranscript(finalTranscript || "Listening...");
-    };
-
-    recognition.onerror = () => stopListening();
-    recognition.onend = () => stopListening();
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-    setTranscript("Listening...");
-  }, [stopListening]);
+  // Bind stream to video element after it renders
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream, isCapturing]);
 
   useEffect(() => {
-    return () => stopListening();
-  }, [stopListening]);
+    return () => {
+      mediaStream?.getTracks().forEach((t) => t.stop());
+    };
+  }, [mediaStream]);
 
   return (
     <div className="w-screen h-screen flex-shrink-0 flex flex-col items-center justify-center px-6 pt-16 pb-12 box-border relative overflow-hidden">
-      <div className="w-full max-w-5xl max-h-[85vh] flex-1 grid grid-cols-3 gap-6 py-4 mt-2">
-        {/* Column 1 — 3D Avatar Image */}
+      <div className="w-full max-w-6xl max-h-[75vh] flex-1 grid gap-6 py-2 mt-2" style={{ gridTemplateColumns: '2fr 2fr 3fr' }}>
+        {/* Column 1 — 3D Avatar */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -123,7 +81,6 @@ const HomePage = ({ avatarType = "fatigued" }: HomePageProps) => {
 
           {/* Avatar: 3 parts */}
           <div style={{ flex: 3 }} className="w-full relative flex flex-col items-center justify-center">
-            {/* Live Emotion Pulse Rings */}
             <div
               className="absolute top-[60%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full animate-pulse-ring blur-xl"
               style={{
@@ -172,7 +129,8 @@ const HomePage = ({ avatarType = "fatigued" }: HomePageProps) => {
             </div>
           </div>
         </motion.div>
-        {/* Column 2 — Satisfaction Score (Expanded) */}
+
+        {/* Column 2 — Satisfaction Score */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,7 +139,7 @@ const HomePage = ({ avatarType = "fatigued" }: HomePageProps) => {
         >
           <DashboardCard glass className="flex-1 flex flex-col items-center justify-center relative">
             <p className="absolute top-6 left-6 text-sm font-semibold text-muted-foreground tracking-wide uppercase">Satisfaction Score</p>
-            <div className="relative w-48 h-48 mt-4">
+            <div className="relative w-44 h-44 mt-4">
               <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-lg">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="hsl(var(--muted)/0.3)" strokeWidth="12" />
                 <motion.circle
@@ -200,62 +158,84 @@ const HomePage = ({ avatarType = "fatigued" }: HomePageProps) => {
                 <span className="text-xs text-muted-foreground mt-1">Excellent</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-8 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+            <div className="flex items-center gap-2 mt-6 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <TrendingUp size={16} className="text-emerald-500" />
               <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">+9.2% Focus Shift</span>
             </div>
           </DashboardCard>
         </motion.div>
 
-        {/* Column 3 — Voice + Insights */}
+        {/* Column 3 — Focus Capture + Insights */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           className="flex flex-col gap-4 h-full"
         >
-          <DashboardCard glass className="flex-none flex flex-col h-[180px]">
-            <div className="flex items-center justify-between mb-2">
+          {/* Focus Capture Section */}
+          <DashboardCard glass className="flex-[1.2] flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isListening ? "bg-red-500/20 text-red-500" : "bg-blue-500/10 text-blue-500"
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isCapturing ? "bg-emerald-500/20 text-emerald-500" : "bg-blue-500/10 text-blue-500"
                   }`}>
-                  <Mic size={20} />
+                  <ScanFace size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground leading-tight">Voice Context</p>
+                  <p className="text-sm font-bold text-foreground leading-tight">Focus Capture</p>
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-muted-foreground'}`}></span>
-                    {isListening ? "Recording..." : "Standby"}
+                    <span className={`w-1.5 h-1.5 rounded-full ${isCapturing ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`}></span>
+                    {isCapturing ? "Analyzing expressions..." : "Enable camera to track focus"}
                   </p>
                 </div>
               </div>
               <button
-                onClick={isListening ? stopListening : startListening}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isListening
-                  ? "bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]"
-                  : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
+                onClick={isCapturing ? stopCapture : startCapture}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-300 text-xs font-semibold ${isCapturing
+                  ? "bg-red-500/15 hover:bg-red-500/25 text-red-500 border border-red-500/30"
+                  : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 border border-emerald-500/30"
                   }`}
               >
-                {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                {isCapturing ? <><VideoOff size={13} /> Stop</> : <><Video size={13} /> Start</>}
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col justify-end">
-              <div className="flex items-end justify-center gap-[4px] h-6 mb-1.5 px-2 flex-shrink-0">
-                {waveData.map((h, i) => (
-                  <motion.div
-                    key={i}
-                    className={`w-1 rounded-t-sm transition-colors ${isListening ? 'bg-blue-500' : 'bg-muted/50'}`}
-                    animate={{ height: isListening ? h / 2 : 2 }}
-                    transition={{ duration: 0.08 }}
-                  />
-                ))}
-              </div>
-              <div className="w-full rounded-lg bg-background/50 border border-border/50 p-2.5 flex-1 overflow-y-auto">
-                <p className={`text-[11px] italic leading-snug ${isListening ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  "{transcript}"
-                </p>
-              </div>
+            <div className="flex-1 rounded-xl bg-background/30 border border-border/30 overflow-hidden relative">
+              {isCapturing ? (
+                <>
+                  <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover rounded-xl" />
+                  {/* Face tracking overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-[20%] left-[30%] w-[40%] h-[50%] border-2 border-emerald-400/50 rounded-2xl">
+                      <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg"></div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg"></div>
+                      <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg"></div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-400 rounded-br-lg"></div>
+                    </div>
+                  </div>
+                  {/* Live metrics strip */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 flex items-end justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <Eye size={11} className="text-emerald-400" />
+                        <span className="text-[10px] text-white/80 font-medium">Blink: 14/min</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Activity size={11} className="text-blue-400" />
+                        <span className="text-[10px] text-white/80 font-medium">Focus: 87%</span>
+                      </div>
+                    </div>
+                    <span className="text-[9px] text-emerald-400 font-semibold uppercase tracking-wider">Live</span>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <div className="w-16 h-16 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
+                    <ScanFace size={28} className="text-muted-foreground/30" />
+                  </div>
+                  <p className="text-xs text-muted-foreground/50 font-medium">Enable camera for emotion detection</p>
+                  <p className="text-[10px] text-muted-foreground/30">Tracks blink rate, gaze, and micro-expressions</p>
+                </div>
+              )}
             </div>
           </DashboardCard>
 

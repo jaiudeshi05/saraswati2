@@ -115,15 +115,20 @@
 
 @layer utilities {
 
-  /* ── Background: blue gradient + blue dot grid, no grain ── */
+  /* ── Background: premium multi-layer gradient ── */
   .bg-surface-gradient {
-    /* Dark navy → mid-blue gradient */
-    background: linear-gradient(160deg, #050d1f 0%, #0d1f45 45%, #1a3a72 100%);
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(56, 100, 220, 0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(99, 50, 200, 0.08) 0%, transparent 50%),
+      linear-gradient(160deg, #030a1a 0%, #0a1832 30%, #0f2050 60%, #162d6b 100%);
   }
 
   /* Light mode override */
   :root:not(.dark) .bg-surface-gradient {
-    background: linear-gradient(160deg, #dbeafe 0%, #bfdbfe 45%, #93c5fd 100%);
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(147, 197, 253, 0.4) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(196, 181, 253, 0.2) 0%, transparent 50%),
+      linear-gradient(160deg, #eff6ff 0%, #dbeafe 30%, #bfdbfe 60%, #93c5fd 100%);
   }
 
   .bg-card-warm {

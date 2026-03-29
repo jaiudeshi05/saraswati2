@@ -23,9 +23,10 @@ const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const navigateTo = useCallback((index: number) => {
-    if (index < 0 || index >= pages.length) return;
-    setActiveIndex(index);
-    containerRef.current?.scrollTo({ left: index * window.innerWidth, behavior: "smooth" });
+    // Cyclic navigation: wrap around
+    const wrappedIndex = ((index % pages.length) + pages.length) % pages.length;
+    setActiveIndex(wrappedIndex);
+    containerRef.current?.scrollTo({ left: wrappedIndex * window.innerWidth, behavior: "smooth" });
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -51,10 +52,28 @@ const Index = () => {
     return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        navigateTo(activeIndex - 1);
+      } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        navigateTo(activeIndex + 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIndex, navigateTo]);
+
   // Ensure dark mode class is applied on mount
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
-  }, []);
+  }, [isDark]);
 
   return (
     <div className="h-screen w-screen bg-surface-gradient relative overflow-hidden">
@@ -79,23 +98,21 @@ const Index = () => {
         setAvatarType={setAvatarType}
       />
 
-      {activeIndex > 0 && (
-        <button
-          onClick={() => navigateTo(activeIndex - 1)}
-          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full glass-card flex items-center justify-center hover:bg-muted/50 transition-colors"
-        >
-          <ChevronLeft size={16} />
-        </button>
-      )}
+      {/* Left Arrow — always visible, cyclic */}
+      <button
+        onClick={() => navigateTo(activeIndex - 1)}
+        className="fixed left-3 top-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-muted/50 transition-colors hover:scale-110"
+      >
+        <ChevronLeft size={24} />
+      </button>
 
-      {activeIndex < pages.length - 1 && (
-        <button
-          onClick={() => navigateTo(activeIndex + 1)}
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full glass-card flex items-center justify-center hover:bg-muted/50 transition-colors"
-        >
-          <ChevronRight size={16} />
-        </button>
-      )}
+      {/* Right Arrow — always visible, cyclic */}
+      <button
+        onClick={() => navigateTo(activeIndex + 1)}
+        className="fixed right-3 top-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-muted/50 transition-colors hover:scale-110"
+      >
+        <ChevronRight size={24} />
+      </button>
 
       {/* Scroll container: owns overflow hidden, fixed navbars float above it */}
       <div
@@ -113,7 +130,7 @@ const Index = () => {
       <BottomNav activeIndex={activeIndex} onNavigate={navigateTo} />
 
       <AnimatePresence>
-        {showProfile && <ProfilePage onClose={() => setShowProfile(false)} />}
+        {showProfile && <ProfilePage avatarType={avatarType} onClose={() => setShowProfile(false)} />}
       </AnimatePresence>
     </div>
   );

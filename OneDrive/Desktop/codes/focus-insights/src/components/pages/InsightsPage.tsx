@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardCard from "@/components/DashboardCard";
-import { Clock, Activity, Target } from "lucide-react";
+import { Clock, Activity, Target, Smile, Meh, Flame, HeartPulse, Brain } from "lucide-react";
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const tabs = ["Coding", "Browsing", "Writing", "Meeting"];
@@ -65,11 +65,11 @@ const InsightsPage = () => {
   ];
 
   const getSnapshotData = (idx: number) => {
-    if (idx <= 2) return { activity: "Coding", score: 82, mood: "😄 Engaged", time: times[idx] };
-    if (idx <= 4) return { activity: "Coding", score: 74, mood: "😐 Neutral", time: times[idx] };
-    if (idx <= 7) return { activity: "Browsing", score: 45, mood: "😤 Frustrated", time: times[idx] };
-    if (idx <= 9) return { activity: "Writing", score: 78, mood: "😊 Recovered", time: times[idx] };
-    return { activity: "Coding", score: 88, mood: "🧘 Focused", time: times[idx] };
+    if (idx <= 2) return { activity: "Coding", score: 82, mood: "Engaged", moodColor: "text-blue-500", time: times[idx] };
+    if (idx <= 4) return { activity: "Coding", score: 74, mood: "Neutral", moodColor: "text-slate-400", time: times[idx] };
+    if (idx <= 7) return { activity: "Browsing", score: 45, mood: "Frustrated", moodColor: "text-red-500", time: times[idx] };
+    if (idx <= 9) return { activity: "Writing", score: 78, mood: "Recovered", moodColor: "text-emerald-500", time: times[idx] };
+    return { activity: "Coding", score: 88, mood: "Focused", moodColor: "text-violet-500", time: times[idx] };
   };
 
   const snapshot = getSnapshotData(scrubIndex);
@@ -123,7 +123,7 @@ const InsightsPage = () => {
                   <div className="flex flex-1 items-center justify-around gap-2 text-xs">
                     <div className="flex items-center gap-1.5"><Activity size={12} className="text-blue-500" /><span className="text-muted-foreground">Act:</span> {snapshot.activity}</div>
                     <div className="flex items-center gap-1.5"><Target size={12} className="text-orange-500" /><span className="text-muted-foreground">Focus:</span> <span className="text-foreground font-semibold">{snapshot.score}</span></div>
-                    <div className="flex items-center gap-1"><span className="text-muted-foreground">Mood:</span> {snapshot.mood}</div>
+                    <div className={`flex items-center gap-1.5 ${snapshot.moodColor}`}><Brain size={12} /><span className="font-semibold">{snapshot.mood}</span></div>
                   </div>
                 </motion.div>
               </AnimatePresence>
@@ -231,27 +231,31 @@ const InsightsPage = () => {
             ))}
           </DashboardCard>
 
-          <DashboardCard glass className="flex-1 flex flex-col gap-3">
+          <DashboardCard glass className="flex-1 flex flex-col gap-2">
             <p className="text-xs font-medium text-muted-foreground tracking-wide uppercase">Mood Timeline</p>
             {[
-              { time: "9:00", mood: "😄 Engaged", idxRange: [0, 2] },
-              { time: "10:30", mood: "😐 Neutral", idxRange: [3, 4] },
-              { time: "11:45", mood: "😤 Frustrated", idxRange: [5, 7] },
-              { time: "13:00", mood: "😊 Recovered", idxRange: [8, 9] },
-              { time: "14:15", mood: "🧘 Focused", idxRange: [10, 11] },
+              { time: "9:00", mood: "Engaged", icon: Smile, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20", dot: "bg-blue-500", glow: "shadow-[0_0_8px_rgba(59,130,246,0.5)]", idxRange: [0, 2] },
+              { time: "10:30", mood: "Neutral", icon: Meh, color: "text-slate-400", bg: "bg-slate-400/10 border-slate-400/20", dot: "bg-slate-400", glow: "shadow-[0_0_8px_rgba(148,163,184,0.5)]", idxRange: [3, 4] },
+              { time: "11:45", mood: "Frustrated", icon: Flame, color: "text-red-500", bg: "bg-red-500/10 border-red-500/20", dot: "bg-red-500", glow: "shadow-[0_0_8px_rgba(239,68,68,0.5)]", idxRange: [5, 7] },
+              { time: "13:00", mood: "Recovered", icon: HeartPulse, color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-500", glow: "shadow-[0_0_8px_rgba(16,185,129,0.5)]", idxRange: [8, 9] },
+              { time: "14:15", mood: "Focused", icon: Brain, color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/20", dot: "bg-violet-500", glow: "shadow-[0_0_8px_rgba(139,92,246,0.5)]", idxRange: [10, 11] },
             ].map((item, i) => {
               const isActive = scrubIndex >= item.idxRange[0] && scrubIndex <= item.idxRange[1];
+              const Icon = item.icon;
               return (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + i * 0.1 }}
-                  className={`flex items-center gap-2 p-1.5 rounded-lg transition-colors ${isActive ? 'bg-muted/50' : ''}`}
+                  className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all duration-300 ${
+                    isActive ? `${item.bg} scale-[1.02]` : 'border-transparent hover:bg-muted/20'
+                  }`}
                 >
-                  <span className={`text-[10px] w-10 transition-colors ${isActive ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{item.time}</span>
-                  <div className={`w-1.5 h-1.5 rounded-full transition-all ${isActive ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] scale-125' : 'bg-muted-foreground pointer-events-none'}`} />
-                  <span className={`text-xs transition-colors ${isActive ? 'text-orange-500 font-semibold' : 'text-foreground'}`}>{item.mood}</span>
+                  <span className={`text-[10px] w-10 font-mono transition-colors ${isActive ? `${item.color} font-bold` : 'text-muted-foreground'}`}>{item.time}</span>
+                  <div className={`w-2 h-2 rounded-full transition-all ${isActive ? `${item.dot} ${item.glow} scale-125` : 'bg-muted-foreground/30'}`} />
+                  <Icon size={14} className={`transition-colors ${isActive ? item.color : 'text-muted-foreground/50'}`} />
+                  <span className={`text-xs transition-colors ${isActive ? `${item.color} font-semibold` : 'text-foreground/70'}`}>{item.mood}</span>
                 </motion.div>
               );
             })}
